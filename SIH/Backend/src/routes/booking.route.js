@@ -1,4 +1,6 @@
 import express from "express";
+import authMiddleware from "../middlewares/authMiddleware.js";
+import requireRole from "../middlewares/requireRole.js";
 import {
   createBooking,
   getCustomerBookings,
@@ -10,11 +12,13 @@ import {
 
 const router = express.Router();
 
-router.post("/", createBooking);
-router.get("/customer", getCustomerBookings);
-router.get("/professional", getProfessionalBookings);
+router.use(authMiddleware);
+
+router.post("/", requireRole("customer"), createBooking);
+router.get("/customer", requireRole("customer"), getCustomerBookings);
+router.get("/professional", requireRole("professional"), getProfessionalBookings);
 router.get("/:id", getBooking);
-router.patch("/:id/status", updateBookingStatus);
+router.patch("/:id/status", requireRole("professional"), updateBookingStatus);
 router.patch("/:id/cancel", cancelBooking);
 
 export default router;

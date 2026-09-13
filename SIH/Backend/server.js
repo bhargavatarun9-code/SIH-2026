@@ -9,6 +9,7 @@ import serviceRouter from "./src/routes/service.route.js";
 import professionalProfileRouter from "./src/routes/professionalProfile.route.js";
 import bookingRouter from "./src/routes/booking.route.js";
 import reviewRouter from "./src/routes/review.route.js";
+import adminRouter from "./src/routes/admin.route.js";
 
 connectDB()
 
@@ -18,6 +19,9 @@ app.use(cors({
   origin: 'http://localhost:5173', // or true during postman testing
   credentials: true
 }))
+
+app.use("/api/admin", adminRouter);
+
 
 app.use(express.json())
 
