@@ -8,10 +8,18 @@ const bookingSchema = new mongoose.Schema(
       required: true,
     },
 
+    /*
+     * For individual booking:
+     * professional = selected worker
+     *
+     * For raised/broadcast request:
+     * professional = null until a worker accepts it
+     */
     professional: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
+      default: null,
     },
 
     service: {
@@ -19,6 +27,27 @@ const bookingSchema = new mongoose.Schema(
       ref: "Service",
       required: true,
     },
+
+    /*
+     * individual = customer selected a specific worker
+     * broadcast = request raised for all workers of category
+     */
+    requestMode: {
+      type: String,
+      enum: ["individual", "broadcast"],
+      default: "individual",
+    },
+
+    /*
+     * Workers who declined a broadcast request.
+     * The request remains available to other workers.
+     */
+    declinedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
 
     address: {
       type: String,
@@ -78,6 +107,9 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-const bookingModel = mongoose.model("Booking", bookingSchema);
+const bookingModel = mongoose.model(
+  "Booking",
+  bookingSchema
+);
 
 export default bookingModel;
