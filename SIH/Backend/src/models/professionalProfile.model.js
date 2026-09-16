@@ -8,25 +8,33 @@ const professionalProfileSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+
     category: {
       type: String,
       required: true,
     },
+
     skills: [String],
+
     experience: {
       type: Number,
       default: 0,
     },
+
     description: String,
+
     hourlyRate: Number,
+
     location: {
       type: String,
       required: true,
     },
+
     rating: {
       type: Number,
       default: 0,
     },
+
     isAvailable: {
       type: Boolean,
       default: true,

@@ -7,8 +7,12 @@ export const createBooking = async (req, res) => {
       service,
       address,
       date,
+      timeSlot,
       description,
       price,
+      paymentMethod,
+      paymentStatus,
+      photos,
     } = req.body;
 
     if (!professional || !service || !address || !date) {
@@ -24,17 +28,28 @@ export const createBooking = async (req, res) => {
       service,
       address,
       date,
-      description,
-      price,
+      timeSlot: timeSlot || "",
+      description: description || "",
+      price: price || 0,
+      paymentMethod: paymentMethod || "Cash After Service",
+      paymentStatus: paymentStatus || "PENDING",
+      photos: photos || [],
+      status: "pending",
     });
+
+    const populatedBooking = await bookingModel
+      .findById(booking._id)
+      .populate("customer", "name email phone")
+      .populate("professional", "name email phone")
+      .populate("service");
 
     return res.status(201).json({
       success: true,
       message: "Booking created successfully",
-      booking,
+      booking: populatedBooking,
     });
   } catch (error) {
-    console.log(error);
+    console.log("CREATE BOOKING ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -48,14 +63,15 @@ export const getCustomerBookings = async (req, res) => {
     const bookings = await bookingModel
       .find({ customer: req.user.id })
       .populate("professional", "name email phone")
-      .populate("service");
+      .populate("service")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
       bookings,
     });
   } catch (error) {
-    console.log(error);
+    console.log("GET CUSTOMER BOOKINGS ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -69,14 +85,15 @@ export const getProfessionalBookings = async (req, res) => {
     const bookings = await bookingModel
       .find({ professional: req.user.id })
       .populate("customer", "name email phone")
-      .populate("service");
+      .populate("service")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
       bookings,
     });
   } catch (error) {
-    console.log(error);
+    console.log("GET PROFESSIONAL BOOKINGS ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -105,7 +122,7 @@ export const getBooking = async (req, res) => {
       booking,
     });
   } catch (error) {
-    console.log(error);
+    console.log("GET BOOKING ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -118,10 +135,32 @@ export const updateBookingStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const booking = await bookingModel.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
+    const allowedStatuses = [
+      "pending",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking status",
+      });
+    }
+
+    const booking = await bookingModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        professional: req.user.id,
+      },
+      {
+        status,
+      },
+      {
+        new: true,
+      }
     );
 
     if (!booking) {
@@ -133,11 +172,11 @@ export const updateBookingStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking status updated",
+      message: "Booking status updated successfully",
       booking,
     });
   } catch (error) {
-    console.log(error);
+    console.log("UPDATE BOOKING STATUS ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -148,10 +187,17 @@ export const updateBookingStatus = async (req, res) => {
 
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await bookingModel.findByIdAndUpdate(
-      req.params.id,
-      { status: "cancelled" },
-      { new: true }
+    const booking = await bookingModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        customer: req.user.id,
+      },
+      {
+        status: "cancelled",
+      },
+      {
+        new: true,
+      }
     );
 
     if (!booking) {
@@ -163,11 +209,11 @@ export const cancelBooking = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking cancelled",
+      message: "Booking cancelled successfully",
       booking,
     });
   } catch (error) {
-    console.log(error);
+    console.log("CANCEL BOOKING ERROR:", error);
 
     return res.status(500).json({
       success: false,
